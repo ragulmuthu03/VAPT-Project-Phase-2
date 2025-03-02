@@ -1,3 +1,37 @@
+language: python
+python:
+  - "3.9"  # Ensure it matches your project dependencies
+
+services:
+  - docker  # Enable Docker for building the image
+
+env:
+  global:
+    - DISPLAY=:99.0  # Required for PyQt5 UI in headless mode
+
+install:
+  - sudo apt-get update
+  - sudo apt-get install -y xvfb  # Required for PyQt5
+  - pip install --upgrade pip
+  - pip install -r requirements.txt  # Install Python dependencies
+
+before_script:
+  - Xvfb :99 -screen 0 1024x768x24 &  # Start virtual display for PyQt5
+
+script:
+  # Run tests if available (modify as per your structure)
+  - python -m unittest discover tests/
+  
+  # Check CLI runs correctly
+  - python tidconsole.py --help
+  
+  # Test UI by launching and closing it (replace with your PyQt5 entry file)
+  - python Maininterface.py & sleep 10 && pkill -f Maininterface.py
+
+after_success:
+  - docker build -t ragulmuthu03/osint-devops .  # Replace with your DockerHub username & repo
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - docker push ragulmuthu03/osint-devops  # Push image to DockerHub
 group: travis_latest
 language: python
 cache: pip
