@@ -11,4 +11,4 @@ COPY . /app
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Set entry point
-CMD ["python3", "MainInterface"]
+CMD ["python3", "tidconsole.py"]
