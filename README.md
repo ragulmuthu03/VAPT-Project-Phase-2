@@ -1,18 +1,3 @@
-<h1 align="center">
-  <img src='files/logo.png' height='500'></img><br>
-  TIDoS
-  <br>
-</h1>
-
-<p align="center">
-  <a href="https://github.com/0xInfection/TIDoS-Framework/blob/master/TIDoS">
-    <img src="https://img.shields.io/static/v1.svg?label=Version&message=2.0&color=lightgrey&style=flat-square&logo=dev.to&logoColor=white">
-  </a>
-  <a href="https://www.python.org/">
-    <img src="https://img.shields.io/static/v1.svg?label=Python&message=3.7%2B&color=lightgrey&style=flat-square&logo=python&logoColor=white">
-  </a><br>
-  The Offensive Web Application Penetration Testing Framework.
-</p>
 
 > __IMPORTANT__:
 >
