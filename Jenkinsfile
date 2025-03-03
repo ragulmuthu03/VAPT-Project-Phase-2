@@ -21,7 +21,7 @@ pipeline {
         stage('Run Code Linting') {
             steps {
                 sh '''
-                source venv/bin/activate
+                . venv/bin/activate
                 venv/bin/pylint tidconsole.py
                 '''
             }
@@ -30,7 +30,7 @@ pipeline {
         stage('Run Unit Tests') {
             steps {
                 sh '''
-                source venv/bin/activate
+                . venv/bin/activate
                 python -m unittest discover -s tests
                 '''
             }
