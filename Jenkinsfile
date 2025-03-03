@@ -16,6 +16,7 @@ pipeline {
             steps {
                 sh 'python3 -m venv $VENV_DIR'
                 sh '. venv/bin/activate && pip install --no-cache-dir -r requirements.txt'
+                pip install pylint
             }
         }
 
