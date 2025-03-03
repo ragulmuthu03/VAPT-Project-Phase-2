@@ -15,8 +15,7 @@ pipeline {
         stage('Setup Python Environment') {
             steps {
                 sh 'python3 -m venv $VENV_DIR'
-                sh 'source $VENV_DIR/bin/activate'
-                sh 'pip install --no-cache-dir -r requirements.txt'
+                sh '. venv/bin/activate && pip install --no-cache-dir -r requirements.txt'
             }
         }
 
