@@ -29,7 +29,6 @@ pipeline {
                 sh '''
                 . venv/bin/activate
                 export PATH=$WORKSPACE/venv/bin:$PATH
-                which pylint  # Debugging step
                 pylint --fail-under=6.0 tidconsole.py || true
                 '''
             }
@@ -48,7 +47,6 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh '''
-                chmod +x docker  # Ensure Docker has execute permissions
                 docker build -t vapt-cli .
                 '''
             }
@@ -57,6 +55,8 @@ pipeline {
         stage('Deploy to Staging') {
             steps {
                 sh '''
+                docker stop vapt-container || true
+                docker rm vapt-container || true
                 docker run -p 5001:5000 -dit --name vapt-container vapt-cli
                 '''
             }
