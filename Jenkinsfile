@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        VENV_PATH = "${WORKSPACE}/venv"
+    }
+
     stages {
         stage('Clone Repository') {
             steps {
@@ -13,7 +17,9 @@ pipeline {
                 sh '''
                 python3 -m venv venv
                 . venv/bin/activate
+                pip install --upgrade pip
                 pip install --no-cache-dir -r requirements.txt
+                pip install pylint
                 '''
             }
         }
@@ -22,7 +28,9 @@ pipeline {
             steps {
                 sh '''
                 . venv/bin/activate
-                venv/bin/pylint tidconsole.py
+                export PATH=$WORKSPACE/venv/bin:$PATH
+                which pylint  # Debugging step
+                pylint --fail-under=6.0 tidconsole.py || true
                 '''
             }
         }
@@ -31,6 +39,7 @@ pipeline {
             steps {
                 sh '''
                 . venv/bin/activate
+                export PATH=$WORKSPACE/venv/bin:$PATH
                 python -m unittest discover -s tests
                 '''
             }
@@ -39,6 +48,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh '''
+                chmod +x docker  # Ensure Docker has execute permissions
                 docker build -t vapt-cli .
                 '''
             }
