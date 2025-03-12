@@ -1,4 +1,6 @@
-<victim http://linkedin.com>
-  <module getgeoip>
+<victim http://www.sample.com>
+  <module iphistory>
+  </module>
+  <module webarchive>
   </module>
 </victim>
