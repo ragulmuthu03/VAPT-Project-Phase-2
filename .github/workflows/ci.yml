@@ -88,12 +88,12 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install psutil memory-profiler matplotlib  # ✅ Ensure dependencies
+          pip install psutil memory-profiler matplotlib
 
       - name: Install Security Tools for Comparison
         run: |
           sudo apt-get install -y nmap whatweb curl dnsutils traceroute sslscan
-          pip install theHarvester  # ✅ Install theHarvester via pip
+          pip install theHarvester  # ✅ Ensure theHarvester is installed properly
 
       - name: Run Performance Tests
         run: |

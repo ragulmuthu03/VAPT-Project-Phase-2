@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from memory_profiler import memory_usage
 import tidconsole  # Import your VAPT tool
 
-DOMAIN = "example.com"  # ✅ Change this to take user input dynamically
+DOMAIN = "example.com"  # ✅ Change this for dynamic input if needed
 
 class TestPerformance(unittest.TestCase):
 
@@ -20,7 +20,7 @@ class TestPerformance(unittest.TestCase):
         """Check if a tool is installed"""
         return subprocess.call(f"which {tool_name}", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0
 
-    def measure_execution_time(self, command, timeout=15):
+    def measure_execution_time(self, command, timeout=10):
         """Run a command with a timeout and measure execution time"""
         start_time = time.time()
         try:
@@ -36,14 +36,14 @@ class TestPerformance(unittest.TestCase):
         """Compare VAPT Tool Against Fast Security Tools"""
 
         tools = {
-            "VAPT": f"python3 tidconsole.py -v {DOMAIN} -l scan.nmap",
-            "Nmap": f"nmap -sn {DOMAIN}",  # ✅ Only host discovery (fast)
-            "WhatWeb": f"whatweb {DOMAIN}",  # ✅ Fast website fingerprinting
-            "Curl": f"curl -I https://{DOMAIN}",  # ✅ Fetch HTTP headers
-            "Dig": f"dig {DOMAIN}",  # ✅ DNS lookup
-            "Traceroute": f"traceroute {DOMAIN}",  # ✅ Network route tracking
-            "SSLScan": f"sslscan {DOMAIN}",  # ✅ Quick SSL/TLS security scan
-            "theHarvester": f"theHarvester -d {DOMAIN} -b google"  # ✅ OSINT email harvesting
+            "VAPT": f"python3 tidconsole.py -v {DOMAIN} -l scan.nmap",  # ✅ Ensure VAPT is included
+            "Nmap": f"nmap -sn {DOMAIN}",
+            "WhatWeb": f"whatweb {DOMAIN}",
+            "Curl": f"curl -I https://{DOMAIN}",
+            "Dig": f"dig {DOMAIN}",
+            "Traceroute": f"traceroute -w 1 {DOMAIN}",  # ✅ Reduce timeout to 10s
+            "SSLScan": f"sslscan {DOMAIN}",
+            "theHarvester": f"theHarvester -d {DOMAIN} -b google"
         }
 
         results = {}
@@ -53,8 +53,8 @@ class TestPerformance(unittest.TestCase):
                 print(f"❌ {tool_name} is not installed. Skipping...")
                 continue  # ✅ Skip missing tools
 
-            print(f"\n🚀 Running {tool_name} on {DOMAIN} (max {15}s timeout)...")
-            execution_time = self.measure_execution_time(command, timeout=15)  # ⏳ Set timeout
+            print(f"\n🚀 Running {tool_name} on {DOMAIN} (max {10}s timeout)...")
+            execution_time = self.measure_execution_time(command, timeout=10)  # ⏳ Set timeout
 
             results[tool_name] = {"execution_time": execution_time}
             print(f"{tool_name}: Time={execution_time:.2f}s")
