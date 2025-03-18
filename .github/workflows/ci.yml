@@ -21,14 +21,13 @@ jobs:
         with:
           python-version: '3.10'
 
-            - name: Install dependencies
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libncurses6 libxml2 nmap tcpdump libexiv2-dev build-essential \
                                  python3-pip libmariadb3 libmysqlclient-dev tor konsole
           pip install --upgrade pip
           pip install -r requirements.txt || echo "Skipping pip install"
-
 
       - name: Run VAPT Tool
         run: |
