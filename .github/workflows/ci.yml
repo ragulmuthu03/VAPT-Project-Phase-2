@@ -58,6 +58,7 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install psutil memory-profiler
+          pip install psutil memory-profiler matplotlib  # ✅ Install matplotlib
 
       - name: Run Unit Tests
         run: |
@@ -96,7 +97,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: performance-test-results
-          path: reports/
+          path: reports/performance_results.txt
 
   # ----------------------------- #
   # 🐳 Docker Build & Run
