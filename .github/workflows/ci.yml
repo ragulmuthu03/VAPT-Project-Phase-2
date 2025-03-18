@@ -56,9 +56,13 @@ jobs:
 
       - name: Install dependencies
         run: |
+          pip install --upgrade pip
           pip install -r requirements.txt
-          pip install psutil memory-profiler
-          pip install psutil memory-profiler matplotlib  # ✅ Install matplotlib
+          pip install psutil memory-profiler matplotlib  # ✅ Ensures all required packages
+
+      - name: Verify Installed Packages
+        run: |
+          pip list | grep "matplotlib\|psutil\|memory-profiler" || echo "❌ Missing dependencies!"
 
       - name: Run Unit Tests
         run: |
@@ -82,8 +86,9 @@ jobs:
 
       - name: Install dependencies
         run: |
+          pip install --upgrade pip
           pip install -r requirements.txt
-          pip install psutil memory-profiler
+          pip install psutil memory-profiler matplotlib  # ✅ Ensure dependencies
 
       - name: Install Nmap for Performance Comparison
         run: |
@@ -98,6 +103,12 @@ jobs:
         with:
           name: performance-test-results
           path: reports/performance_results.txt
+
+      - name: Upload Performance Graphs
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-graphs
+          path: reports/*.png  # ✅ Upload all graph images
 
   # ----------------------------- #
   # 🐳 Docker Build & Run
