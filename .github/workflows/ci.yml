@@ -90,9 +90,9 @@ jobs:
           pip install -r requirements.txt
           pip install psutil memory-profiler matplotlib  # ✅ Ensure dependencies
 
-      - name: Install Nmap for Performance Comparison
+      - name: Install Security Tools for Comparison
         run: |
-          sudo apt-get install -y nmap
+          sudo apt-get install -y nmap nikto wapiti openvas  # ✅ Install all required tools
 
       - name: Run Performance Tests
         run: |

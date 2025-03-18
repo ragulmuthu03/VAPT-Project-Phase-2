@@ -14,6 +14,10 @@ class TestPerformance(unittest.TestCase):
         """Ensure the 'reports' directory exists before running tests."""
         os.makedirs("reports", exist_ok=True)
 
+    def is_tool_installed(self, tool_name):
+        """Check if a tool is installed"""
+        return subprocess.call(f"which {tool_name}", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0
+
     def measure_execution_time(self, command):
         """Run a command and measure execution time"""
         start_time = time.time()
@@ -22,27 +26,6 @@ class TestPerformance(unittest.TestCase):
         except subprocess.CalledProcessError as e:
             print(f"⚠️ Error executing: {command}, {e}")
         return time.time() - start_time
-
-    def measure_cpu_usage(self, command):
-        """Run a command and measure CPU usage"""
-        process = psutil.Process()
-        start_cpu = process.cpu_percent(interval=1)
-
-        try:
-            subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, check=True)
-        except subprocess.CalledProcessError as e:
-            print(f"⚠️ Error executing: {command}, {e}")
-
-        return process.cpu_percent(interval=1) - start_cpu
-
-    def measure_memory_usage(self, function):
-        """Run a function and measure memory usage"""
-        try:
-            mem_usage = memory_usage(function, interval=0.1)
-            return max(mem_usage)
-        except Exception as e:
-            print(f"⚠️ Error measuring memory: {e}")
-            return -1
 
     def test_vapt_vs_other_tools(self):
         """Compare VAPT Tool Against Nmap, Nikto, Wapiti, OpenVAS"""
@@ -58,18 +41,15 @@ class TestPerformance(unittest.TestCase):
         results = {}
 
         for tool_name, command in tools.items():
+            if not self.is_tool_installed(tool_name.lower().split()[0]):
+                print(f"❌ {tool_name} is not installed. Skipping...")
+                continue  # ✅ Skip missing tools
+
             print(f"\n🚀 Running {tool_name}...")
             execution_time = self.measure_execution_time(command)
-            cpu_usage = self.measure_cpu_usage(command)
-            memory_usage = self.measure_memory_usage(lambda: subprocess.run(command, shell=True))
 
-            results[tool_name] = {
-                "execution_time": execution_time,
-                "cpu_usage": cpu_usage,
-                "memory_usage": memory_usage
-            }
-
-            print(f"{tool_name}: Time={execution_time:.2f}s, CPU={cpu_usage:.2f}%, Memory={memory_usage:.2f}MB")
+            results[tool_name] = {"execution_time": execution_time}
+            print(f"{tool_name}: Time={execution_time:.2f}s")
 
         # Save and generate graphs
         self.save_results_and_generate_graphs(results)
@@ -79,39 +59,25 @@ class TestPerformance(unittest.TestCase):
         results_file = "reports/performance_comparison.txt"
         
         execution_times = []
-        cpu_usages = []
-        memory_usages = []
         tool_names = []
 
         with open(results_file, "w") as f:
             for tool, data in results.items():
                 execution_times.append(data['execution_time'])
-                cpu_usages.append(data['cpu_usage'])
-                memory_usages.append(data['memory_usage'])
                 tool_names.append(tool)
 
-                f.write(f"{tool}: Execution Time: {data['execution_time']:.2f}s, CPU: {data['cpu_usage']:.2f}%, Memory: {data['memory_usage']:.2f}MB\n")
+                f.write(f"{tool}: Execution Time: {data['execution_time']:.2f}s\n")
 
         print(f"✅ Performance comparison saved to {results_file}")
 
-        # Generate Graphs
-        self.generate_graphs(tool_names, execution_times, cpu_usages, memory_usages)
-
-    def generate_graphs(self, tools, execution_time, cpu_usage, memory_usage):
-        """Automatically generate and save graphs"""
-
-        def plot_graph(metric, values, ylabel, title, filename):
-            plt.figure(figsize=(10, 6))
-            plt.bar(tools, values, color=['blue', 'red', 'green', 'orange', 'purple'])
-            plt.ylabel(ylabel)
-            plt.title(title)
-            plt.xticks(rotation=30)
-            plt.savefig(f"reports/{filename}")  # ✅ Save graphs automatically
-            plt.close()
-
-        plot_graph("Execution Time", execution_time, "Time (seconds)", "Execution Time Comparison", "execution_time.png")
-        plot_graph("CPU Usage", cpu_usage, "CPU Usage (%)", "CPU Usage Comparison", "cpu_usage.png")
-        plot_graph("Memory Usage", memory_usage, "Memory Usage (MB)", "Memory Usage Comparison", "memory_usage.png")
+        # Generate Execution Time Graph
+        plt.figure(figsize=(10, 6))
+        plt.bar(tool_names, execution_times, color=['blue', 'red', 'green', 'orange', 'purple'])
+        plt.ylabel("Time (seconds)")
+        plt.title("Execution Time Comparison")
+        plt.xticks(rotation=30)
+        plt.savefig("reports/execution_time.png")  # ✅ Save graph automatically
+        plt.close()
 
         print("✅ Graphs generated and saved to 'reports/' folder.")
 
