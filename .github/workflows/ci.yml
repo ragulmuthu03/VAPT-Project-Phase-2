@@ -33,8 +33,29 @@ jobs:
         run: |
           python3 tidconsole.py --help || echo "Skipping execution"
 
-  docker:
+  test:
     needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Tests
+        run: |
+          python -m unittest discover -s tests -p "*.py"
+
+  docker:
+    needs: test
     runs-on: ubuntu-latest
 
     steps:
