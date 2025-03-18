@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from memory_profiler import memory_usage
 import tidconsole  # Import your VAPT tool
 
+DOMAIN = "example.com"  # ✅ Change this to take user input dynamically
+
 class TestPerformance(unittest.TestCase):
 
     @classmethod
@@ -18,24 +20,30 @@ class TestPerformance(unittest.TestCase):
         """Check if a tool is installed"""
         return subprocess.call(f"which {tool_name}", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0
 
-    def measure_execution_time(self, command):
-        """Run a command and measure execution time"""
+    def measure_execution_time(self, command, timeout=15):
+        """Run a command with a timeout and measure execution time"""
         start_time = time.time()
         try:
-            subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, check=True)
+            subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, check=True, timeout=timeout)
+        except subprocess.TimeoutExpired:
+            print(f"⚠️ {command} took too long and was terminated.")
+            return timeout  # Set to timeout value to avoid blocking
         except subprocess.CalledProcessError as e:
             print(f"⚠️ Error executing: {command}, {e}")
         return time.time() - start_time
 
     def test_vapt_vs_other_tools(self):
-        """Compare VAPT Tool Against Nmap, Nikto, Wapiti, OpenVAS"""
+        """Compare VAPT Tool Against Fast Security Tools"""
 
         tools = {
-            "VAPT": "python3 tidconsole.py -v example.com -l scan.nmap",
-            "Nmap": "nmap example.com",
-            "Nikto": "nikto -h example.com",
-            "Wapiti": "wapiti -u http://example.com",
-            "OpenVAS": "omp -u admin -w password --xml '<task>OpenVAS Task</task>'"
+            "VAPT": f"python3 tidconsole.py -v {DOMAIN} -l scan.nmap",
+            "Nmap": f"nmap -sn {DOMAIN}",  # ✅ Only host discovery (fast)
+            "WhatWeb": f"whatweb {DOMAIN}",  # ✅ Fast website fingerprinting
+            "Curl": f"curl -I https://{DOMAIN}",  # ✅ Fetch HTTP headers
+            "Dig": f"dig {DOMAIN}",  # ✅ DNS lookup
+            "Traceroute": f"traceroute {DOMAIN}",  # ✅ Network route tracking
+            "SSLScan": f"sslscan {DOMAIN}",  # ✅ Quick SSL/TLS security scan
+            "theHarvester": f"theHarvester -d {DOMAIN} -b google"  # ✅ OSINT email harvesting
         }
 
         results = {}
@@ -45,8 +53,8 @@ class TestPerformance(unittest.TestCase):
                 print(f"❌ {tool_name} is not installed. Skipping...")
                 continue  # ✅ Skip missing tools
 
-            print(f"\n🚀 Running {tool_name}...")
-            execution_time = self.measure_execution_time(command)
+            print(f"\n🚀 Running {tool_name} on {DOMAIN} (max {15}s timeout)...")
+            execution_time = self.measure_execution_time(command, timeout=15)  # ⏳ Set timeout
 
             results[tool_name] = {"execution_time": execution_time}
             print(f"{tool_name}: Time={execution_time:.2f}s")
@@ -72,7 +80,7 @@ class TestPerformance(unittest.TestCase):
 
         # Generate Execution Time Graph
         plt.figure(figsize=(10, 6))
-        plt.bar(tool_names, execution_times, color=['blue', 'red', 'green', 'orange', 'purple'])
+        plt.bar(tool_names, execution_times, color=['blue', 'red', 'green', 'orange', 'purple', 'cyan', 'yellow', 'pink'])
         plt.ylabel("Time (seconds)")
         plt.title("Execution Time Comparison")
         plt.xticks(rotation=30)

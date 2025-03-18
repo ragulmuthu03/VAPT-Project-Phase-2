@@ -92,7 +92,8 @@ jobs:
 
       - name: Install Security Tools for Comparison
         run: |
-          sudo apt-get install -y nmap nikto wapiti openvas  # ✅ Install all required tools
+          sudo apt-get install -y nmap whatweb curl dnsutils traceroute sslscan
+          pip install theHarvester  # ✅ Install theHarvester via pip
 
       - name: Run Performance Tests
         run: |
@@ -102,13 +103,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: performance-test-results
-          path: reports/performance_results.txt
+          path: reports/performance_comparison.txt
 
       - name: Upload Performance Graphs
         uses: actions/upload-artifact@v4
         with:
           name: performance-graphs
-          path: reports/*.png  # ✅ Upload all graph images
+          path: reports/*.png
 
   # ----------------------------- #
   # 🐳 Docker Build & Run
