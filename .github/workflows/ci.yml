@@ -1,0 +1,83 @@
+name: VAPT Tool CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libncurses5 libxml2 nmap tcpdump libexiv2-dev build-essential \
+                                 python3-pip libmariadbclient18 libmysqlclient-dev tor konsole
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Tests
+        run: |
+          python -m unittest discover -s tests -p "*.py"
+
+      - name: Lint Code
+        run: |
+          pip install flake8
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+  performance:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          pip install memory-profiler psutil
+
+      - name: Run Performance Tests
+        run: |
+          python -m unittest discover -s tests -p "test_performance.py"
+          python -m unittest discover -s tests -p "memory_test.py"
+          python -m unittest discover -s tests -p "cpu_test.py"
+
+  docker:
+    needs: performance
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Build and Run Docker Container
+        run: |
+          docker build -t vapt-tool .
+          docker run --rm vapt-tool --version
+
+  deploy:
+    needs: docker
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deploy to Server (Example)
+        run: |
+          echo "Deploying VAPT tool..."
+          # Add deployment commands here (e.g., SCP, SSH, Kubernetes, etc.)
+
+
