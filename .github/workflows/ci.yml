@@ -9,6 +9,9 @@ on:
       - main
 
 jobs:
+  # ----------------------------- #
+  # 🚀 Build Job
+  # ----------------------------- #
   build:
     runs-on: ubuntu-latest
 
@@ -29,13 +32,18 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt || echo "Skipping pip install"
 
-      - name: Run VAPT Tool
+      - name: Run VAPT Tool (Sanity Check)
         run: |
           python3 tidconsole.py --help || echo "Skipping execution"
 
+  # ----------------------------- #
+  # 🧪 Test Job
+  # ----------------------------- #
   test:
     needs: build
     runs-on: ubuntu-latest
+    env:
+      TERM: xterm  # ✅ Fixes missing terminal variable
 
     steps:
       - name: Checkout repository
@@ -51,10 +59,13 @@ jobs:
           pip install -r requirements.txt
           pip install psutil memory-profiler
 
-      - name: Run Tests
+      - name: Run Unit Tests
         run: |
           python -m unittest discover -s tests -p "*.py"
 
+  # ----------------------------- #
+  # 🐳 Docker Build & Run
+  # ----------------------------- #
   docker:
     needs: test
     runs-on: ubuntu-latest
@@ -75,6 +86,9 @@ jobs:
           docker build -t vapt-tool .
           docker run --rm vapt-tool --help || echo "Skipping execution"
 
+  # ----------------------------- #
+  # 🚀 Deployment (Optional)
+  # ----------------------------- #
   deploy:
     needs: docker
     runs-on: ubuntu-latest
