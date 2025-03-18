@@ -41,6 +41,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Check if Dockerfile exists
+        run: |
+          if [ ! -f Dockerfile ]; then
+            echo "❌ ERROR: Dockerfile not found! Ensure it exists in the root directory."
+            exit 1
+          fi
+
       - name: Build and Run Docker Container
         run: |
           docker build -t vapt-tool .
@@ -52,8 +59,11 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Deploy to Server (Example)
         run: |
-          echo "Deploying VAPT tool..."
+          echo "🚀 Deploying VAPT tool..."
           # Add deployment commands here (e.g., SCP, SSH, Kubernetes)
 
