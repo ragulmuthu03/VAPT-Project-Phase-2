@@ -5,56 +5,63 @@ import psutil
 import subprocess
 import matplotlib.pyplot as plt
 from memory_profiler import memory_usage
-import tidconsole  # Import your VAPT tool
 
-DOMAIN = "example.com"  # ✅ Change this for dynamic input if needed
+DOMAIN = "example.com"  # ✅ Set target domain
 
 class TestPerformance(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        """Ensure the 'reports' directory exists before running tests."""
+        """Ensure 'reports' directory exists before running tests."""
         os.makedirs("reports", exist_ok=True)
 
     def is_tool_installed(self, tool_name):
         """Check if a tool is installed"""
         return subprocess.call(f"which {tool_name}", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0
 
-    def measure_execution_time(self, command, timeout=10):
-        """Run a command with a timeout and measure execution time"""
+    def measure_execution_time(self, command, input_commands="", timeout=20):
+        """Run a command with automated user input and measure execution time"""
         start_time = time.time()
         try:
-            subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, check=True, timeout=timeout)
+            process = subprocess.Popen(
+                command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=True,
+                text=True
+            )
+            process.communicate(input=input_commands)  # ✅ Send user commands
         except subprocess.TimeoutExpired:
             print(f"⚠️ {command} took too long and was terminated.")
-            return timeout  # Set to timeout value to avoid blocking
-        except subprocess.CalledProcessError as e:
-            print(f"⚠️ Error executing: {command}, {e}")
+            return timeout
         return time.time() - start_time
 
     def test_vapt_vs_other_tools(self):
         """Compare VAPT Tool Against Fast Security Tools"""
 
         tools = {
-            "VAPT": f"python3 tidconsole.py -v {DOMAIN} -l scan.nmap",  # ✅ Ensure VAPT is included
+            "VAPT": {
+                "command": "python3 tidconsole.py",
+                "input": "help\nload scan.nmap\nset TARGET {}\nattack\nexit\n".format(DOMAIN)  # ✅ Simulating user input
+            },
             "Nmap": f"nmap -sn {DOMAIN}",
             "WhatWeb": f"whatweb {DOMAIN}",
             "Curl": f"curl -I https://{DOMAIN}",
             "Dig": f"dig {DOMAIN}",
-            "Traceroute": f"traceroute -w 1 {DOMAIN}",  # ✅ Reduce timeout to 10s
+            "Traceroute": f"traceroute -w 1 {DOMAIN}",
             "SSLScan": f"sslscan {DOMAIN}",
             "theHarvester": f"theHarvester -d {DOMAIN} -b google"
         }
 
         results = {}
 
-        for tool_name, command in tools.items():
-            if not self.is_tool_installed(tool_name.lower().split()[0]):
-                print(f"❌ {tool_name} is not installed. Skipping...")
-                continue  # ✅ Skip missing tools
-
-            print(f"\n🚀 Running {tool_name} on {DOMAIN} (max {10}s timeout)...")
-            execution_time = self.measure_execution_time(command, timeout=10)  # ⏳ Set timeout
+        for tool_name, data in tools.items():
+            if isinstance(data, dict):  # If VAPT (which requires input)
+                command, input_commands = data["command"], data["input"]
+                execution_time = self.measure_execution_time(command, input_commands, timeout=20)
+            else:  # If regular CLI tools
+                execution_time = self.measure_execution_time(data, timeout=10)
 
             results[tool_name] = {"execution_time": execution_time}
             print(f"{tool_name}: Time={execution_time:.2f}s")
