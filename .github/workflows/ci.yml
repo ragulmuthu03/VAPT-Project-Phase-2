@@ -1,3 +1,13 @@
+  name: VAPT Tool CI/CD  # ✅ This restores the original pipeline name
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
   # ----------------------------- #
   # 🚀 Performance Benchmarking Job
   # ----------------------------- #
