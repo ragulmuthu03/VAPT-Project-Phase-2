@@ -66,7 +66,7 @@ class TestPerformance(unittest.TestCase):
         """Measure VAPT tool performance for selected modules."""
         tools = {
             "VAPT": {
-                "command": "sudo python3 tidconsole.py",  # ✅ Run with root privileges
+                "command": "sudo python3 tidconsole.py --quiet",  # ✅ Suppress interactive startup
                 "input": "help\nload scan.nmap\nset TARGET {}\nattack\nexit\n".format(DOMAIN)
             },
         }
@@ -76,7 +76,7 @@ class TestPerformance(unittest.TestCase):
         """Measure performance of external tools comparable to VAPT modules."""
         tools = {
             "Nmap": f"nmap -sn {DOMAIN}",
-            "Subnet Enumeration": f"ipcalc {DOMAIN}",
+            "Subnet Enumeration": f"ipcalc $(dig +short {DOMAIN} | head -n1)",
             "GeoIP Lookup": f"geoiplookup {DOMAIN}",
         }
         self.run_tool_tests(tools, "tools_performance.txt")
