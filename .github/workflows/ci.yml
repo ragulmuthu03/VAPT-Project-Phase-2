@@ -46,6 +46,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
+          pip install psutil memory-profiler matplotlib
 
       - name: Run VAPT Tool Performance Test
         run: |
@@ -69,6 +70,8 @@ jobs:
         run: |
           sudo apt-get install -y nmap whatweb curl dnsutils traceroute sslscan
           pip install theHarvester
+          pip install psutil memory-profiler matplotlib
+          
 
       - name: Run Security Tool Performance Tests
         run: |
