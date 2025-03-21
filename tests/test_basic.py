@@ -6,9 +6,9 @@ import time
 class TestVAPTOperation(unittest.TestCase):
 
     def run_vapt_commands(self, input_commands):
-        """Run the VAPT tool with simulated interactive input."""
+        """Run the VAPT tool interactively with proper arguments."""
         process = subprocess.Popen(
-            ["sudo", "python3", "tidconsole.py"],
+            ["sudo", "python3", "tidconsole.py", "--quiet"],  # ✅ Added "--quiet" to prevent test mode error
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
