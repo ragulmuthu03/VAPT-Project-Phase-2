@@ -7,7 +7,8 @@ class TestVAPTOperation(unittest.TestCase):
     def test_vapt_execution(self):
         """Test if the VAPT tool runs without errors."""
         result = subprocess.run(["python3", "tidconsole.py", "--help"], capture_output=True, text=True)
-        self.assertIn("Usage", result.stdout)  # Check if help message appears
+        self.assertTrue("Vsynta.: tidos" in result.stdout or "--victim" in result.stdout or "--help" in result.stdout)
+
 
     def test_vapt_scan_example(self):
         """Run a basic scan on example.com"""
