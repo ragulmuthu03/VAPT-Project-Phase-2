@@ -8,6 +8,7 @@ from memory_profiler import memory_usage
 
 DOMAIN = "example.com"
 
+
 class TestPerformance(unittest.TestCase):
 
     @classmethod
@@ -15,19 +16,24 @@ class TestPerformance(unittest.TestCase):
         """Ensure 'reports' directory exists before running tests."""
         os.makedirs("reports", exist_ok=True)
 
-    def measure_execution_time(self, command):
-        """Run a command and measure execution time."""
+    def measure_execution_time(self, command, input_commands=""):
+        """Run a command with automated user input and measure execution time."""
         start_time = time.time()
         try:
             process = subprocess.Popen(
-                command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                command, 
+                stdin=subprocess.PIPE, 
+                stdout=subprocess.PIPE, 
+                stderr=subprocess.PIPE, 
+                shell=True, 
+                text=True
             )
-            process.communicate()
+            process.communicate(input=input_commands)
         except subprocess.TimeoutExpired:
-            return 30  # Default timeout
+            return 30  # Default timeout if it takes too long
         return time.time() - start_time
 
-    def measure_cpu_memory(self, command):
+    def measure_cpu_memory(self, command, input_commands=""):
         """Measure CPU and memory usage."""
         process = psutil.Process()
         start_cpu = process.cpu_percent(interval=1)
@@ -38,9 +44,14 @@ class TestPerformance(unittest.TestCase):
         """Run all tools and collect performance metrics."""
         results = {"Execution Time": {}, "CPU Usage": {}, "Memory Usage": {}}
 
-        for tool, command in tools.items():
-            exec_time = self.measure_execution_time(command)
-            cpu_usage, mem_usage = self.measure_cpu_memory(command)
+        for tool, data in tools.items():
+            if isinstance(data, dict):  # If VAPT (which requires input)
+                command, input_commands = data["command"], data["input"]
+                exec_time = self.measure_execution_time(command, input_commands)
+                cpu_usage, mem_usage = self.measure_cpu_memory(command, input_commands)
+            else:  # If regular CLI tools
+                exec_time = self.measure_execution_time(data)
+                cpu_usage, mem_usage = self.measure_cpu_memory(data)
 
             results["Execution Time"][tool] = exec_time
             results["CPU Usage"][tool] = cpu_usage
@@ -53,9 +64,10 @@ class TestPerformance(unittest.TestCase):
     def test_vapt_performance(self):
         """Measure VAPT tool performance for selected modules."""
         tools = {
-            "Nmap Module": "python3 tidconsole.py -l scan.nmap -v {}".format(DOMAIN),
-            "Subnet Module": "python3 tidconsole.py -l osint.subnet -v {}".format(DOMAIN),
-            "GeoIP Module": "python3 tidconsole.py -l osint.getgeoip -v {}".format(DOMAIN),
+            "VAPT": {
+                "command": "sudo python3 tidconsole.py",  # ✅ Run with root privileges
+                "input": "help\nload scan.nmap\nset TARGET {}\nattack\nexit\n".format(DOMAIN)
+            },
         }
         self.run_tool_tests(tools, "vapt_performance.txt")
 
@@ -91,6 +103,7 @@ class TestPerformance(unittest.TestCase):
             plt.close()
 
             print(f"✅ {metric} graph saved as 'reports/{metric.lower().replace(' ', '_')}.png'")
+
 
 if __name__ == "__main__":
     unittest.main()
