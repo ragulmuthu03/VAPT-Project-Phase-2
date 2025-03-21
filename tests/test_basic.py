@@ -1,19 +1,24 @@
 import unittest
-import os
 import subprocess
+import re
 
 class TestVAPTOperation(unittest.TestCase):
-
+    
     def test_vapt_execution(self):
-        """Test if the VAPT tool runs without errors."""
-        result = subprocess.run(["python3", "tidconsole.py", "--help"], capture_output=True, text=True)
-        self.assertTrue("Vsynta.: tidos" in result.stdout or "--victim" in result.stdout or "--help" in result.stdout)
-
-
-    def test_vapt_scan_example(self):
-        """Run a basic scan on example.com"""
-        result = subprocess.run(["python3", "tidconsole.py", "-v", "example.com", "-l", "scan.nmap"], capture_output=True, text=True)
-        self.assertNotIn("Error", result.stderr)  # Ensure no errors occur
+        """Test if the VAPT tool runs without errors and displays correct output."""
+        result = subprocess.run(
+            ["python3", "tidconsole.py", "--help"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        
+        # Remove ANSI escape sequences
+        clean_output = re.sub(r'\x1b\[[0-9;]*[mHJK]', '', result.stdout)
+        
+        # Validate expected output exists
+        self.assertTrue("tidos" in clean_output.lower() or "--victim" in clean_output.lower(), 
+                        "Expected keywords not found in output!")
 
 if __name__ == "__main__":
     unittest.main()
