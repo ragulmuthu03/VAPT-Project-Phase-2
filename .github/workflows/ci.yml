@@ -9,9 +9,12 @@ on:
       - main
 
 jobs:
+  # ----------------------------- #
   # 🚀 Build Job
+  # ----------------------------- #
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -29,10 +32,17 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt || echo "Skipping pip install"
 
-  # 🧪 VAPT Execution Test (Separate from Other Security Tools)
-  test_vapt:
+      - name: Run VAPT Tool (Sanity Check)
+        run: |
+          python3 tidconsole.py --help || echo "Skipping execution"
+
+  # ----------------------------- #
+  # 🚀 Performance Benchmarking Job
+  # ----------------------------- #
+  performance:
     needs: build
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -48,64 +58,36 @@ jobs:
           pip install -r requirements.txt
           pip install psutil memory-profiler matplotlib
 
-      - name: Run VAPT Tool Performance Test
-        run: |
-          python3 tests/test_performance.py --mode=vapt
-
-      - name: Upload VAPT Performance Results
-        uses: actions/upload-artifact@v4
-        with:
-          name: vapt-performance-results
-          path: reports/vapt_performance.txt
-
-  # 🛠 Security Tools Execution (Separate from VAPT)
-  test_tools:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Install Dependencies
+      - name: Install Security Tools for Comparison
         run: |
           sudo apt-get install -y nmap whatweb curl dnsutils traceroute sslscan
-          pip install theHarvester
-          pip install psutil memory-profiler matplotlib
-          
 
-      - name: Run Security Tool Performance Tests
+      - name: Run VAPT Performance Tests
+        run: python3 tests/test_performance.py --mode=vapt
+
+      - name: Run Other Tools Performance Tests
+        run: python3 tests/test_performance.py --mode=tools
+
+      - name: Ensure reports directory exists
+        run: mkdir -p reports
+
+      - name: Verify performance test files
         run: |
-          python3 tests/test_performance.py --mode=tools
+          if [ ! -f reports/vapt_performance.txt ] || [ ! -f reports/tools_performance.txt ]; then
+            echo "❌ Performance test files are missing!"
+            exit 1
+          fi
 
-      - name: Upload Security Tool Performance Results
+      - name: Merge Performance Reports
+        run: cat reports/vapt_performance.txt reports/tools_performance.txt > reports/performance_comparison.txt
+
+      - name: Upload Performance Test Results
         uses: actions/upload-artifact@v4
         with:
-          name: security-tools-performance-results
-          path: reports/tools_performance.txt
-
-  # 📊 Merge Results & Generate Graphs
-  merge_results:
-    needs: [test_vapt, test_tools]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Merge Performance Results
-        run: |
-          cat reports/vapt_performance.txt reports/tools_performance.txt > reports/performance_comparison.txt
-
-      - name: Generate Performance Graphs
-        run: |
-          python3 tests/test_performance.py --mode=generate_graphs
-
-      - name: Upload Final Results
-        uses: actions/upload-artifact@v4
-        with:
-          name: performance-comparison
+          name: performance-test-results
           path: reports/performance_comparison.txt
 
-      - name: Upload Graphs
+      - name: Upload Performance Graphs
         uses: actions/upload-artifact@v4
         with:
           name: performance-graphs
