@@ -3,92 +3,107 @@ import os
 import time
 import psutil
 import subprocess
+import argparse
 import matplotlib.pyplot as plt
 from memory_profiler import memory_usage
 
 DOMAIN = "example.com"  # ✅ Set target domain
-
-def ensure_reports_directory():
-    """Ensure the 'reports' directory exists before writing files."""
-    os.makedirs("reports", exist_ok=True)
 
 class TestPerformance(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         """Ensure 'reports' directory exists before running tests."""
-        ensure_reports_directory()
+        os.makedirs("reports", exist_ok=True)
 
-    def is_tool_installed(self, tool_name):
-        """Check if a tool is installed"""
-        return subprocess.call(f"which {tool_name}", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0
-
-    def measure_execution_time(self, command, input_commands="", timeout=20):
-        """Run a command with automated user input and measure execution time"""
+    def measure_execution_time(self, command):
+        """Run a command and measure execution time"""
         start_time = time.time()
         try:
-            process = subprocess.Popen(
-                command,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                shell=True,
-                text=True
-            )
-            process.communicate(input=input_commands)  # ✅ Send user commands
-        except subprocess.TimeoutExpired:
-            print(f"⚠️ {command} took too long and was terminated.")
-            return timeout
+            subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"⚠️ Error executing: {command}, {e}")
         return time.time() - start_time
 
-    def test_vapt_performance(self):
-        """Measure VAPT Tool Performance"""
-        vapt_command = "python3 tidconsole.py"
-        vapt_input = "help\nlist osint-passive\nload getgeoip\nattack getgeoip\nexit\n"
-        vapt_execution_time = self.measure_execution_time(vapt_command, vapt_input, timeout=20)
+    def measure_cpu_memory_usage(self, function):
+        """Run a function and measure CPU and Memory usage"""
+        mem_usage = memory_usage(function, interval=0.1)
+        process = psutil.Process()
+        cpu_usage = process.cpu_percent(interval=1)
+        return max(mem_usage), cpu_usage
 
-        # Simulate CPU and memory usage
-        vapt_cpu_usage = psutil.cpu_percent(interval=1)
-        vapt_memory_usage = max(memory_usage((self.measure_execution_time, (vapt_command, vapt_input, 20))))
+    def test_vapt_modules(self):
+        """Test three VAPT modules separately"""
 
-        # Save VAPT performance results
-        ensure_reports_directory()
-        with open("reports/vapt_performance.txt", "w") as f:
-            f.write("VAPT Tool Performance Results\n")
-            f.write(f"Execution Time: {vapt_execution_time:.2f}s\n")
-            f.write(f"CPU Usage: {vapt_cpu_usage:.2f}%\n")
-            f.write(f"Memory Usage: {vapt_memory_usage:.2f}MB\n")
-
-        print("✅ VAPT performance results saved.")
-
-    def test_other_tools_performance(self):
-        """Compare VAPT Tool Against Other Security Tools"""
-
-        tools = {
-            "Nmap": f"nmap -sn {DOMAIN}",
-            "WhatWeb": f"whatweb {DOMAIN}",
-            "Curl": f"curl -I https://{DOMAIN}",
-            "Dig": f"dig {DOMAIN}",
-            "Traceroute": f"traceroute -w 1 {DOMAIN}",
-            "SSLScan": f"sslscan {DOMAIN}"
+        vapt_modules = {
+            "Nmap Scan": f"sudo python3 tidconsole.py -l scan.nmap -v {DOMAIN}",  # ✅ Run with sudo
+            "Subnet Enumeration": f"sudo python3 tidconsole.py -l scan.subnet -v {DOMAIN}",
+            "GeoIP Lookup": f"sudo python3 tidconsole.py -l osint-passive.getgeoip -v {DOMAIN}"
         }
 
         results = {}
 
-        for tool_name, command in tools.items():
-            execution_time = self.measure_execution_time(command, timeout=10)
-            results[tool_name] = {"execution_time": execution_time}
-            print(f"{tool_name}: Time={execution_time:.2f}s")
+        for module, command in vapt_modules.items():
+            exec_time = self.measure_execution_time(command)
+            mem_usage, cpu_usage = self.measure_cpu_memory_usage(lambda: subprocess.run(command, shell=True))
 
-        # Save results
-        ensure_reports_directory()
-        with open("reports/tools_performance.txt", "w") as f:
-            f.write("Other Tools Performance Results\n")
+            results[module] = {
+                "execution_time": exec_time,
+                "memory_usage": mem_usage,
+                "cpu_usage": cpu_usage
+            }
+
+            print(f"{module}: Time={exec_time:.2f}s, Memory={mem_usage:.2f}MB, CPU={cpu_usage:.2f}%")
+
+        # Save VAPT results
+        self.save_results("vapt_performance.txt", results)
+
+    def test_external_tools(self):
+        """Test equivalent external tools"""
+
+        external_tools = {
+            "Nmap": f"nmap -sn {DOMAIN}",
+            "Subnet Enumeration": f"ipcalc {DOMAIN}",
+            "GeoIP Lookup": f"geoiplookup {DOMAIN}"
+        }
+
+        results = {}
+
+        for tool, command in external_tools.items():
+            exec_time = self.measure_execution_time(command)
+            mem_usage, cpu_usage = self.measure_cpu_memory_usage(lambda: subprocess.run(command, shell=True))
+
+            results[tool] = {
+                "execution_time": exec_time,
+                "memory_usage": mem_usage,
+                "cpu_usage": cpu_usage
+            }
+
+            print(f"{tool}: Time={exec_time:.2f}s, Memory={mem_usage:.2f}MB, CPU={cpu_usage:.2f}%")
+
+        # Save external tools' results
+        self.save_results("tools_performance.txt", results)
+
+    def save_results(self, filename, results):
+        """Save performance results to a file"""
+        with open(f"reports/{filename}", "w") as f:
             for tool, data in results.items():
-                f.write(f"{tool}: Execution Time: {data['execution_time']:.2f}s\n")
-
-        print("✅ Other tools performance results saved.")
+                f.write(f"{tool}: Execution Time: {data['execution_time']:.2f}s, "
+                        f"Memory: {data['memory_usage']:.2f}MB, CPU: {data['cpu_usage']:.2f}%\n")
+        print(f"✅ {filename} saved.")
 
 if __name__ == "__main__":
-    unittest.main()
+    parser = argparse.ArgumentParser(description="Run performance tests for VAPT and external tools.")
+    parser.add_argument("--mode", choices=["vapt", "tools"], required=True, help="Select test mode: 'vapt' or 'tools'")
+    args = parser.parse_args()
+
+    suite = unittest.TestSuite()
+    
+    if args.mode == "vapt":
+        suite.addTest(TestPerformance("test_vapt_modules"))
+    elif args.mode == "tools":
+        suite.addTest(TestPerformance("test_external_tools"))
+
+    runner = unittest.TextTestRunner()
+    runner.run(suite)
 

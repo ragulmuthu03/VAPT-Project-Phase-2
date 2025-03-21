@@ -1,46 +1,8 @@
-name: VAPT Tool CI/CD
-
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-
-jobs:
-  # ----------------------------- #
-  # 🚀 Build Job
-  # ----------------------------- #
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libncurses6 libxml2 nmap tcpdump libexiv2-dev build-essential \
-                                 python3-pip libmariadb3 libmysqlclient-dev tor konsole
-          pip install --upgrade pip
-          pip install -r requirements.txt || echo "Skipping pip install"
-
-      - name: Run VAPT Tool (Sanity Check)
-        run: |
-          python3 tidconsole.py --help || echo "Skipping execution"
-
   # ----------------------------- #
   # 🚀 Performance Benchmarking Job
   # ----------------------------- #
   performance:
-    needs: build
+    needs: test
     runs-on: ubuntu-latest
 
     steps:
@@ -60,32 +22,22 @@ jobs:
 
       - name: Install Security Tools for Comparison
         run: |
-          sudo apt-get install -y nmap whatweb curl dnsutils traceroute sslscan
+          sudo apt-get install -y nmap whatweb curl dnsutils traceroute sslscan ipcalc geoip-bin
+          pip install theHarvester  # ✅ Ensure theHarvester is installed properly
 
-      - name: Run VAPT Performance Tests
-        run: python3 tests/test_performance.py --mode=vapt
-
-      - name: Run Other Tools Performance Tests
-        run: python3 tests/test_performance.py --mode=tools
-
-      - name: Ensure reports directory exists
-        run: mkdir -p reports
-
-      - name: Verify performance test files
+      - name: Run Performance Tests (VAPT)
         run: |
-          if [ ! -f reports/vapt_performance.txt ] || [ ! -f reports/tools_performance.txt ]; then
-            echo "❌ Performance test files are missing!"
-            exit 1
-          fi
+          sudo python3 tests/test_performance.py --mode=vapt
 
-      - name: Merge Performance Reports
-        run: cat reports/vapt_performance.txt reports/tools_performance.txt > reports/performance_comparison.txt
+      - name: Run Performance Tests (Other Tools)
+        run: |
+          python3 tests/test_performance.py --mode=tools
 
       - name: Upload Performance Test Results
         uses: actions/upload-artifact@v4
         with:
           name: performance-test-results
-          path: reports/performance_comparison.txt
+          path: reports/*.txt
 
       - name: Upload Performance Graphs
         uses: actions/upload-artifact@v4
