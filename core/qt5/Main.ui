@@ -802,8 +802,8 @@ image: none;
       <widget class="QLabel" name="logo">
        <property name="minimumSize">
         <size>
-         <width>128</width>
-         <height>128</height>
+         <width>220</width>
+         <height>100</height>
         </size>
        </property>
        <property name="maximumSize">

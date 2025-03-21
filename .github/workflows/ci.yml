@@ -90,22 +90,32 @@ jobs:
           pip install -r requirements.txt
           pip install psutil memory-profiler matplotlib
 
-      - name: Install Security Tools for Comparison
+      - name: Install Relevant Security Tools Based on Module
         run: |
-          sudo apt-get install -y nmap whatweb curl dnsutils traceroute sslscan
-          pip install theHarvester  # ✅ Ensure theHarvester is installed properly
+          SELECTED_MODULE="nmap"  # Change based on testing needs
+          if [ "$SELECTED_MODULE" = "nmap" ]; then
+            sudo apt-get install -y nmap sslscan;
+          elif [ "$SELECTED_MODULE" = "webarchive" ]; then
+            sudo apt-get install -y whatweb curl dnsutils;
+          elif [ "$SELECTED_MODULE" = "getgeoip" ]; then
+            sudo apt-get install -y curl traceroute;
+          else
+            sudo apt-get install -y nmap whatweb curl sslscan dig;
+          fi
 
       - name: Run Performance Tests
         run: |
           python -m unittest discover -s tests -p "test_performance.py"
 
-      - name: Upload Performance Test Results
+      - name: Upload Performance Test Results (If Exists)
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: performance-test-results
           path: reports/performance_comparison.txt
 
-      - name: Upload Performance Graphs
+      - name: Upload Performance Graphs (If Exists)
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: performance-graphs

@@ -38,21 +38,43 @@ class TestPerformance(unittest.TestCase):
         return time.time() - start_time
 
     def test_vapt_vs_other_tools(self):
-        """Compare VAPT Tool Against Fast Security Tools"""
+        """Compare VAPT Tool Against Security Tools Based on Loaded Modules"""
+
+        # ✅ Detect which module is loaded (Simulated Input)
+        selected_module = "nmap"  # Change this to test different modules (e.g., 'webarchive', 'getgeoip', etc.)
+
+        # ✅ Define tools for comparison based on the selected module
+        module_tool_mapping = {
+            "nmap": ["Nmap", "WhatWeb", "SSLScan"],
+            "webarchive": ["theHarvester", "Curl", "Dig"],
+            "getgeoip": ["Curl", "Traceroute"],
+            "dnscheck": ["Dig", "WhatWeb"],
+        }
+
+        comparison_tools = module_tool_mapping.get(selected_module, ["Nmap", "WhatWeb", "Curl"])  # Default comparison
 
         tools = {
             "VAPT": {
-                "command": "python3 tidconsole.py",
-                "input": "help\nload scan.nmap\nset TARGET {}\nattack\nexit\n".format(DOMAIN)  # ✅ Simulating user input
-            },
-            "Nmap": f"nmap -sn {DOMAIN}",
-            "WhatWeb": f"whatweb {DOMAIN}",
-            "Curl": f"curl -I https://{DOMAIN}",
-            "Dig": f"dig {DOMAIN}",
-            "Traceroute": f"traceroute -w 1 {DOMAIN}",
-            "SSLScan": f"sslscan {DOMAIN}",
-            "theHarvester": f"theHarvester -d {DOMAIN} -b google"
+                "command": f"python3 tidconsole.py",
+                "input": f"help\nload scan.{selected_module}\nset TARGET {DOMAIN}\nattack\nexit\n"  # ✅ Load user module dynamically
+            }
         }
+
+        # ✅ Add selected tools for comparison dynamically
+        if "Nmap" in comparison_tools:
+            tools["Nmap"] = f"nmap -sn {DOMAIN}"
+        if "WhatWeb" in comparison_tools:
+            tools["WhatWeb"] = f"whatweb {DOMAIN}"
+        if "Curl" in comparison_tools:
+            tools["Curl"] = f"curl -I https://{DOMAIN}"
+        if "SSLScan" in comparison_tools:
+            tools["SSLScan"] = f"sslscan {DOMAIN}"
+        if "theHarvester" in comparison_tools:
+            tools["theHarvester"] = f"theHarvester -d {DOMAIN} -b google"
+        if "Traceroute" in comparison_tools:
+            tools["Traceroute"] = f"traceroute -w 1 {DOMAIN}"
+        if "Dig" in comparison_tools:
+            tools["Dig"] = f"dig {DOMAIN}"
 
         results = {}
 
@@ -72,7 +94,7 @@ class TestPerformance(unittest.TestCase):
     def save_results_and_generate_graphs(self, results):
         """Save performance results to a file and generate graphs"""
         results_file = "reports/performance_comparison.txt"
-        
+
         execution_times = []
         tool_names = []
 

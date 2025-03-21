@@ -1,6 +1,28 @@
-<victim http://www.sample.com>
-  <module iphistory>
+<victim http://www.example.com>
+  <module cms>
   </module>
-  <module webarchive>
+  <module dav>
+  </module>
+  <module dotbrute>
+  </module>
+  <module getports>
+  </module>
+  <module grabhead>
+  </module>
+  <module httpmethods>
+  </module>
+  <module indexmulbrute>
+  </module>
+  <module logbrute>
+  </module>
+  <module phpinfo>
+  </module>
+  <module proxybrute>
+  </module>
+  <module robot>
+  </module>
+  <module serverdetect>
+  </module>
+  <module sslcert>
   </module>
 </victim>
