@@ -1,0 +1,15 @@
+Execution Time:
+Nmap: 0.33
+Subnet Enumeration: 0.07
+GeoIP Lookup: 0.00
+
+CPU Usage:
+Nmap: 0.00
+Subnet Enumeration: 0.00
+GeoIP Lookup: 0.00
+
+Memory Usage:
+Nmap: 112.16
+Subnet Enumeration: 112.16
+GeoIP Lookup: 112.16
+

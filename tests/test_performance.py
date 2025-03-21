@@ -3,6 +3,7 @@ import os
 import time
 import psutil
 import subprocess
+import argparse
 import matplotlib.pyplot as plt
 from memory_profiler import memory_usage
 
@@ -21,11 +22,11 @@ class TestPerformance(unittest.TestCase):
         start_time = time.time()
         try:
             process = subprocess.Popen(
-                command, 
-                stdin=subprocess.PIPE, 
-                stdout=subprocess.PIPE, 
-                stderr=subprocess.PIPE, 
-                shell=True, 
+                command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=True,
                 text=True
             )
             process.communicate(input=input_commands)
@@ -106,5 +107,24 @@ class TestPerformance(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    # Argument Parsing
+    parser = argparse.ArgumentParser(description="Run performance tests for VAPT and other tools.")
+    parser.add_argument("--mode", choices=["vapt", "tools", "all"], required=True, help="Select the test mode to run.")
+    args = parser.parse_args()
+
+    # Create test suite based on mode
+    suite = unittest.TestSuite()
+    if args.mode == "vapt":
+        suite.addTest(TestPerformance("test_vapt_performance"))
+    elif args.mode == "tools":
+        suite.addTest(TestPerformance("test_other_tools_performance"))
+    elif args.mode == "all":
+        suite.addTests([
+            TestPerformance("test_vapt_performance"),
+            TestPerformance("test_other_tools_performance")
+        ])
+
+    # Run tests
+    runner = unittest.TextTestRunner()
+    runner.run(suite)
 
