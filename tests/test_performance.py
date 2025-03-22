@@ -3,128 +3,101 @@ import os
 import time
 import psutil
 import subprocess
-import argparse
 import matplotlib.pyplot as plt
 from memory_profiler import memory_usage
 
 DOMAIN = "example.com"
-
+REPORTS_DIR = "reports"
 
 class TestPerformance(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         """Ensure 'reports' directory exists before running tests."""
-        os.makedirs("reports", exist_ok=True)
+        os.makedirs(REPORTS_DIR, exist_ok=True)
 
-    def measure_execution_time(self, command, input_commands=""):
-        """Run a command with automated user input and measure execution time."""
+    def measure_metrics(self, command):
+        """Run a command, measure execution time, CPU, and memory usage."""
         start_time = time.time()
-        try:
-            process = subprocess.Popen(
-                command,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                shell=True,
-                text=True
-            )
-            process.communicate(input=input_commands)
-        except subprocess.TimeoutExpired:
-            return 30  # Default timeout if it takes too long
-        return time.time() - start_time
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
+        mem_usage = memory_usage(process, interval=0.1)  # Capture memory usage during execution
+        process.communicate()  # Wait for process to finish
 
-    def measure_cpu_memory(self, command, input_commands=""):
-        """Measure CPU and memory usage."""
-        process = psutil.Process()
-        start_cpu = process.cpu_percent(interval=1)
-        mem_usage = memory_usage((subprocess.run, (command,), {"shell": True}), interval=0.1)
-        return start_cpu, max(mem_usage)
+        exec_time = time.time() - start_time
+        cpu_usage = psutil.cpu_percent(interval=1)
+        max_memory = max(mem_usage)
 
-    def run_tool_tests(self, tools, file_name):
-        """Run all tools and collect performance metrics."""
-        results = {"Execution Time": {}, "CPU Usage": {}, "Memory Usage": {}}
-
-        for tool, data in tools.items():
-            if isinstance(data, dict):  # If VAPT (which requires input)
-                command, input_commands = data["command"], data["input"]
-                exec_time = self.measure_execution_time(command, input_commands)
-                cpu_usage, mem_usage = self.measure_cpu_memory(command, input_commands)
-            else:  # If regular CLI tools
-                exec_time = self.measure_execution_time(data)
-                cpu_usage, mem_usage = self.measure_cpu_memory(data)
-
-            results["Execution Time"][tool] = exec_time
-            results["CPU Usage"][tool] = cpu_usage
-            results["Memory Usage"][tool] = mem_usage
-
-            print(f"{tool}: Time={exec_time:.2f}s, CPU={cpu_usage:.2f}%, Memory={mem_usage:.2f}MB")
-
-        self.save_results_and_generate_graphs(results, file_name)
+        return exec_time, cpu_usage, max_memory
 
     def test_vapt_performance(self):
-        """Measure VAPT tool performance for selected modules."""
-        tools = {
-            "VAPT": {
-                "command": "sudo python3 tidconsole.py --quiet",  # ✅ Suppress interactive startup
-                "input": "help\nload scan.nmap\nset TARGET {}\nattack\nexit\n".format(DOMAIN)
-            },
+        """Measure performance of VAPT tool after user execution."""
+        print("\n[+] Run VAPT manually, execute required operations, and then exit.")
+        input("Press Enter after completing execution...")  # Wait for user to finish
+
+        exec_time, cpu_usage, mem_usage = self.measure_metrics("sudo python3 tidconsole.py --quiet")
+
+        results = {
+            "Execution Time (s)": exec_time,
+            "CPU Usage (%)": cpu_usage,
+            "Memory Usage (MB)": mem_usage
         }
-        self.run_tool_tests(tools, "vapt_performance.txt")
+
+        self.save_results("vapt_performance.txt", results)
+        self.generate_graphs(results, "VAPT Performance")
 
     def test_other_tools_performance(self):
-        """Measure performance of external tools comparable to VAPT modules."""
+        """Measure performance of external tools."""
         tools = {
             "Nmap": f"nmap -sn {DOMAIN}",
-            "Subnet Enumeration": f"ipcalc $(dig +short {DOMAIN} | head -n1)",
+            "Subnet Enumeration": f"ipcalc {DOMAIN}",
             "GeoIP Lookup": f"geoiplookup {DOMAIN}",
+            "Traceroute": f"traceroute -w 1 {DOMAIN}"
         }
-        self.run_tool_tests(tools, "tools_performance.txt")
 
-    def save_results_and_generate_graphs(self, results, file_name):
-        """Save results and generate graphs for comparison."""
-        file_path = f"reports/{file_name}"
+        results = {"Execution Time (s)": {}, "CPU Usage (%)": {}, "Memory Usage (MB)": {}}
+
+        for tool, command in tools.items():
+            exec_time, cpu_usage, mem_usage = self.measure_metrics(command)
+            results["Execution Time (s)"][tool] = exec_time
+            results["CPU Usage (%)"][tool] = cpu_usage
+            results["Memory Usage (MB)"][tool] = mem_usage
+            print(f"{tool}: Time={exec_time:.2f}s, CPU={cpu_usage:.2f}%, Memory={mem_usage:.2f}MB")
+
+        self.save_results("tools_performance.txt", results)
+        self.generate_graphs(results, "Comparison with Other Tools")
+
+    def save_results(self, filename, results):
+        """Save results to a file."""
+        file_path = os.path.join(REPORTS_DIR, filename)
         with open(file_path, "w") as f:
             for metric, data in results.items():
-                f.write(f"{metric}:\n")
-                for tool, value in data.items():
-                    f.write(f"{tool}: {value:.2f}\n")
-                f.write("\n")
+                if isinstance(data, dict):
+                    f.write(f"{metric}:\n")
+                    for tool, value in data.items():
+                        f.write(f"{tool}: {value:.2f}\n")
+                else:
+                    f.write(f"{metric}: {data:.2f}\n")
+            f.write("\n")
 
         print(f"✅ {file_path} saved.")
 
-        # Generate separate graphs for Execution Time, CPU Usage, and Memory Usage
+    def generate_graphs(self, results, title):
+        """Generate graphs for comparison."""
         for metric, data in results.items():
             plt.figure(figsize=(10, 6))
-            plt.bar(data.keys(), data.values(), color=['blue', 'red', 'green', 'orange', 'purple'])
+            if isinstance(data, dict):
+                plt.bar(data.keys(), data.values(), color=['blue', 'red', 'green', 'orange', 'purple'])
+            else:
+                plt.bar([title], [data], color='blue')
             plt.ylabel(metric)
-            plt.title(f"{metric} Comparison (VAPT vs. Other Tools)")
+            plt.title(f"{metric} - {title}")
             plt.xticks(rotation=30)
-            plt.savefig(f"reports/{metric.lower().replace(' ', '_')}.png")
+            plt.savefig(f"{REPORTS_DIR}/{metric.replace(' ', '_').lower()}.png")
             plt.close()
 
-            print(f"✅ {metric} graph saved as 'reports/{metric.lower().replace(' ', '_')}.png'")
-
+            print(f"✅ {metric} graph saved as '{REPORTS_DIR}/{metric.replace(' ', '_').lower()}.png'")
 
 if __name__ == "__main__":
-    # Argument Parsing
-    parser = argparse.ArgumentParser(description="Run performance tests for VAPT and other tools.")
-    parser.add_argument("--mode", choices=["vapt", "tools", "all"], required=True, help="Select the test mode to run.")
-    args = parser.parse_args()
-
-    # Create test suite based on mode
-    suite = unittest.TestSuite()
-    if args.mode == "vapt":
-        suite.addTest(TestPerformance("test_vapt_performance"))
-    elif args.mode == "tools":
-        suite.addTest(TestPerformance("test_other_tools_performance"))
-    elif args.mode == "all":
-        suite.addTests([
-            TestPerformance("test_vapt_performance"),
-            TestPerformance("test_other_tools_performance")
-        ])
-
-    # Run tests
-    runner = unittest.TextTestRunner()
-    runner.run(suite)
+    unittest.main()
 
