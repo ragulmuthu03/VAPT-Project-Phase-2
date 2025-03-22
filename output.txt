@@ -1,0 +1,44 @@
+[H[2J[3J[H[2J[3J[0m                      |
+                      :   
+                      |   
+                      .   
+                      .   
+                      .   
+____, __             .|   
+   + ;               .|   
+   .[1m:,                       
+     '                      
+    .              /      
+    + ;           :,      
+    ;.           /,       
+   [0m  ;          /;' ;    
+     ;         /;[3m|[0m  : ^  
+     '      / [3m:[0m  ;.'  *   
+          '/; \           
+         ./ '. \      [3m|[0m
+          '.  '-    __\,_
+         [1m   '.      [0m\[1m`[3m;[0m[1m 
+              \      [0m\ [1m
+              .\.     [0mV[1m   
+                \.               
+                 .,.      
+                   .'.    
+                  ''.;:     
+                    .|.   
+                     | .  
+                     .    
+                     
+
+[0m[38;2;58;49;58m[3mVsynta.:[0m [48;2;58;49;58mtidos[0m [-v VIC] [-p] [-a CA] [-s] 
+          [-f] [-l M] [-h] [-c VAL]
+        [--app] [-q]
+
+  -v VIC, --victim VIC  [0m[38;2;58;49;58m[3mTarget to attack per cli[0m
+  -l M, --load M        [0m[38;2;58;49;58m[3mModule to load per cli[0m
+  -a CA, --list CA      [0m[38;2;58;49;58m[3mList modules of CA[0m
+  -p, --tor             [0m[38;2;58;49;58m[3mPipe Attacks thro. Tor?[0m
+  -s, --session         [0m[38;2;58;49;58m[3mIs VIC a session file?[0m
+  -q, --quiet           [0m[38;2;58;49;58m[3mStart Console quietly[0m
+  -f, --fetch           [0m[38;2;58;49;58m[3mCheck for & install updates[0m
+  -c, --file            [0m[38;2;58;49;58m[3mAutomation using VAL file[0m
+  --app                 [0m[38;2;58;49;58m[3mRun TIDoS graphical interface[0m

@@ -31,6 +31,7 @@ jobs:
                                  python3-pip libmariadb3 libmysqlclient-dev tor konsole
           pip install --upgrade pip
           pip install -r requirements.txt || echo "Skipping pip install"
+          pip install texttable
 
       - name: Run VAPT Tool (Sanity Check)
         run: |
@@ -59,6 +60,8 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install psutil memory-profiler matplotlib  # ✅ Ensures all required packages
+          pip install texttable
+          sudo apt-get install -y nmap ipcalc geoip-bin
 
       - name: Run Unit Tests
         run: |
@@ -88,7 +91,7 @@ jobs:
 
       - name: Install Security Tools for Comparison
         run: |
-          sudo apt-get install -y nmap whatweb curl dnsutils traceroute sslscan
+          sudo apt-get install -y nmap whatweb curl dnsutils traceroute sslscan ipcalc geoip-bin
           pip install theHarvester  # ✅ Ensure theHarvester is installed properly
 
       - name: Run Performance Tests (VAPT Tool)

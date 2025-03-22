@@ -1,9 +1,13 @@
-Execution Time:
-VAPT: 0.14
-
-CPU Usage:
-VAPT: 0.00
-
-Memory Usage:
-VAPT: 64.92
-
+Tool, Timestamp, CPU Usage (%), Memory Usage (MB)
+VAPT-GeoIP, 1.00, 0.00, 31.52
+VAPT-GeoIP, 4.00, 0.00, 31.52
+VAPT-GeoIP, 7.01, 0.00, 31.52
+VAPT-GeoIP, 10.01, 0.00, 31.52
+VAPT-GeoIP, 13.01, 0.00, 31.52
+VAPT-GeoIP, 16.01, 1.00, 31.52
+VAPT-GeoIP, 19.01, 0.00, 31.52
+VAPT-GeoIP, 22.02, 0.00, 31.52
+VAPT-GeoIP, 25.02, 0.00, 33.27
+VAPT-GeoIP, 28.02, 0.00, 33.27
+VAPT-GeoIP, 31.03, 1.00, 34.76
+VAPT-GeoIP, 34.04, 0.00, 34.76

@@ -29,3 +29,4 @@ photon
 # ------------------------------------------
 # post-exploitation & control
 # https://github.com/nil0x42/phpsploit
+texttable==1.7.0
