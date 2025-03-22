@@ -35,6 +35,9 @@ jobs:
           pip install -r requirements.txt || echo "Skipping pip install"
           pip install texttable
 
+      - name: Ensure reports directory exists inside project
+        run: mkdir -p reports
+
       - name: Run VAPT Tool (Sanity Check)
         run: |
           python3 tidconsole.py --help || echo "Skipping execution"
@@ -64,6 +67,9 @@ jobs:
           pip install psutil memory-profiler texttable
           sudo apt-get install -y nmap ipcalc geoip-bin
 
+      - name: Ensure reports directory exists inside project
+        run: mkdir -p reports
+
       - name: Run Unit Tests
         run: |
           python -m unittest discover -s tests -p "*.py"
@@ -78,6 +84,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      - name: Ensure reports directory exists inside project
+        run: mkdir -p reports
 
       - name: Check if Dockerfile exists
         run: |
@@ -102,6 +111,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      - name: Ensure reports directory exists inside project
+        run: mkdir -p reports
 
       - name: Deploy to Server (Example)
         run: |
