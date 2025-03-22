@@ -16,14 +16,16 @@ class TestPerformance(unittest.TestCase):
         """Ensure 'reports' directory exists before running tests."""
         os.makedirs(REPORTS_DIR, exist_ok=True)
 
-    def measure_metrics(self, command):
+    def measure_metrics(self, command, input_commands=""):
         """Run a command, measure execution time, CPU, and memory usage."""
         start_time = time.time()
-        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        process = subprocess.Popen(
+            command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
         
         mem_usage = memory_usage(process, interval=0.1)  # Capture memory usage during execution
-        process.communicate()  # Wait for process to finish
-
+        process.communicate(input=input_commands)  # Send simulated input
+        
         exec_time = time.time() - start_time
         cpu_usage = psutil.cpu_percent(interval=1)
         max_memory = max(mem_usage)
@@ -31,11 +33,11 @@ class TestPerformance(unittest.TestCase):
         return exec_time, cpu_usage, max_memory
 
     def test_vapt_performance(self):
-        """Measure performance of VAPT tool after user execution."""
-        print("\n[+] Run VAPT manually, execute required operations, and then exit.")
-        input("Press Enter after completing execution...")  # Wait for user to finish
+        """Measure performance of VAPT tool with automated execution."""
+        print("\n[+] Running VAPT tool automatically...")
 
-        exec_time, cpu_usage, mem_usage = self.measure_metrics("sudo python3 tidconsole.py --quiet")
+        vapt_input = "vicadd www.google.com\nlist osint-passive\nload getgeoip\nattack\nexit\n"
+        exec_time, cpu_usage, mem_usage = self.measure_metrics("sudo python3 tidconsole.py --quiet", vapt_input)
 
         results = {
             "Execution Time (s)": exec_time,
