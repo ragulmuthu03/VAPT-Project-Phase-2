@@ -33,7 +33,7 @@ jobs:
                                  dnsutils ipcalc traceroute sslscan whatweb
           pip install --upgrade pip
           pip install -r requirements.txt || echo "Skipping pip install"
-          pip install texttable
+          pip install texttable matplotlib  # ✅ Added missing package
 
       - name: Ensure reports directory exists inside project
         run: mkdir -p reports
@@ -43,7 +43,7 @@ jobs:
           python3 tidconsole.py --help || echo "Skipping execution"
 
   # ----------------------------- #
-  # 🧪 Test Job
+  # 🧪 Test Job (Using Pytest)
   # ----------------------------- #
   test:
     needs: build
@@ -64,15 +64,15 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install psutil memory-profiler texttable
+          pip install psutil memory-profiler texttable matplotlib
           sudo apt-get install -y nmap ipcalc geoip-bin
 
       - name: Ensure reports directory exists inside project
         run: mkdir -p reports
 
-      - name: Run Unit Tests
+      - name: Run Unit Tests (Pytest)
         run: |
-          python -m unittest discover -s tests -p "*.py"
+          pytest tests/ --disable-warnings --maxfail=2
 
   # ----------------------------- #
   # 🐳 Docker Build & Run
