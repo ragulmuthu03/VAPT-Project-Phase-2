@@ -2,101 +2,94 @@ import unittest
 import os
 import time
 import psutil
+import subprocess
 import matplotlib.pyplot as plt
+
+REPORTS_DIR = "reports"
+os.makedirs(REPORTS_DIR, exist_ok=True)
 
 class TestPerformance(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         """Ensure 'reports' directory exists before running tests."""
-        os.makedirs("reports", exist_ok=True)
+        os.makedirs(REPORTS_DIR, exist_ok=True)
 
-    def monitor_performance(self, duration=30):
-        """Monitor CPU, Memory, and Execution Time while VAPT runs manually."""
-        print("\n[+] Start your VAPT tool manually using: sudo python3 tidconsole.py")
-        input("[+] Perform all operations and exit the tool. Then press ENTER to continue...")
-
+    def run_command(self, command):
+        """Runs a shell command and measures execution time, CPU, and memory usage."""
         start_time = time.time()
-        cpu_usages, mem_usages = [], []
 
-        print("[+] Monitoring system performance...")
-        while time.time() - start_time < duration:
-            cpu_usages.append(psutil.cpu_percent(interval=1))
-            mem_usages.append(psutil.virtual_memory().used / (1024 * 1024))  # Convert bytes to MB
+        try:
+            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            ps_proc = psutil.Process(process.pid)
+            time.sleep(0.1)
 
-        exec_time = time.time() - start_time
+            cpu_usage = ps_proc.cpu_percent(interval=0.1)
+            memory_usage = ps_proc.memory_info().rss / (1024 * 1024)  # Convert bytes to MB
 
-        avg_cpu = sum(cpu_usages) / len(cpu_usages)
-        avg_mem = sum(mem_usages) / len(mem_usages)
+            process.wait()
+            execution_time = time.time() - start_time
 
-        results = {
-            "Execution Time": exec_time,
-            "CPU Usage": avg_cpu,
-            "Memory Usage": avg_mem
-        }
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            execution_time, cpu_usage, memory_usage = 30.0, 0.0, 0.0  # Fallback in case of error
 
-        self.save_results_and_generate_graphs(results, "vapt_performance.txt")
-
-    def compare_other_tools(self):
-        """Compare VAPT with other tools."""
-        tools = {
-            "Nmap": "nmap -sn example.com",
-            "Subnet Enumeration": "ipcalc example.com",
-            "GeoIP Lookup": "geoiplookup example.com",
-            "Traceroute": "traceroute -w 1 example.com",
-        }
-
-        results = {"Execution Time": {}, "CPU Usage": {}, "Memory Usage": {}}
-
-        for tool, command in tools.items():
-            start_time = time.time()
-            try:
-                process = os.popen(command)
-                process.read()
-            except Exception:
-                exec_time = 30  # Timeout fallback
-            else:
-                exec_time = time.time() - start_time
-
-            results["Execution Time"][tool] = exec_time
-            results["CPU Usage"][tool] = psutil.cpu_percent(interval=1)
-            results["Memory Usage"][tool] = psutil.virtual_memory().used / (1024 * 1024)
-
-        self.save_results_and_generate_graphs(results, "tools_performance.txt")
-
-    def save_results_and_generate_graphs(self, results, file_name):
-        """Save results and generate graphs for comparison."""
-        file_path = f"reports/{file_name}"
-        with open(file_path, "w") as f:
-            for metric, data in results.items():
-                if isinstance(data, dict):
-                    f.write(f"{metric}:\n")
-                    for tool, value in data.items():
-                        f.write(f"{tool}: {value:.2f}\n")
-                else:
-                    f.write(f"{metric}: {data:.2f}\n")
-                f.write("\n")
-
-        print(f"✅ {file_path} saved.")
-
-        for metric, data in results.items():
-            plt.figure(figsize=(10, 6))
-            plt.bar(data.keys(), data.values(), color=['blue', 'red', 'green', 'orange'])
-            plt.ylabel(metric)
-            plt.title(f"{metric} Comparison (VAPT vs. Other Tools)")
-            plt.xticks(rotation=30)
-            plt.savefig(f"reports/{metric.lower().replace(' ', '_')}.png")
-            plt.close()
-
-            print(f"✅ {metric} graph saved as 'reports/{metric.lower().replace(' ', '_')}.png'")
+        return execution_time, cpu_usage, memory_usage
 
     def test_vapt_performance(self):
-        """Monitor and log performance while VAPT is running manually."""
-        self.monitor_performance()
+        """Run the VAPT tool and record performance metrics."""
+        print("\n[+] Running VAPT performance test...")
+        execution_time, cpu_usage, memory_usage = self.run_command("python3 tidconsole.py --test")
+
+        results = {
+            "VAPT": {"time": execution_time, "cpu": cpu_usage, "memory": memory_usage}
+        }
+
+        self.save_results(results, "vapt_performance.txt")
+        self.generate_graphs(results, "VAPT Performance")
 
     def test_other_tools_performance(self):
-        """Compare VAPT results with other tools."""
-        self.compare_other_tools()
+        """Compare VAPT performance with other security tools."""
+        tools = {
+            "Nmap": "nmap -sn example.com",
+            "WhatWeb": "whatweb example.com",
+            "Curl": "curl -s example.com",
+            "Dig": "dig example.com",
+            "Traceroute": "traceroute -w 1 example.com",
+            "SSLScan": "sslscan example.com",
+            "theHarvester": "theHarvester -d example.com -b google"
+        }
+
+        results = {}
+        for tool, command in tools.items():
+            print(f"[+] Running {tool}...")
+            execution_time, cpu_usage, memory_usage = self.run_command(command)
+            results[tool] = {"time": execution_time, "cpu": cpu_usage, "memory": memory_usage}
+
+        self.save_results(results, "tools_performance.txt")
+        self.generate_graphs(results, "Comparison of Security Tools")
+
+    def save_results(self, results, file_name):
+        """Save performance results to a file."""
+        file_path = os.path.join(REPORTS_DIR, file_name)
+        with open(file_path, "w") as f:
+            f.write("Tool, Execution Time (s), CPU Usage (%), Memory Usage (MB)\n")
+            for tool, data in results.items():
+                f.write(f"{tool}, {data['time']:.2f}, {data['cpu']:.2f}, {data['memory']:.2f}\n")
+
+        print(f"✅ Performance results saved to {file_path}")
+
+    def generate_graphs(self, results, title):
+        """Generate bar charts for performance metrics."""
+        for metric in ["time", "cpu", "memory"]:
+            plt.figure(figsize=(10, 6))
+            plt.bar(results.keys(), [data[metric] for data in results.values()], color=['blue', 'red', 'green', 'orange', 'purple', 'brown', 'gray'])
+            plt.ylabel(metric.capitalize())
+            plt.title(f"{title}: {metric.capitalize()} Comparison")
+            plt.xticks(rotation=30)
+            plt.savefig(f"{REPORTS_DIR}/{metric}_usage.png")
+            plt.close()
+
+            print(f"✅ Graph saved as '{REPORTS_DIR}/{metric}_usage.png'")
 
 if __name__ == "__main__":
     unittest.main()
