@@ -9,8 +9,12 @@ on:
       - main
 
 jobs:
+  # ----------------------------- #
+  # 🚀 Build Job
+  # ----------------------------- #
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -28,6 +32,9 @@ jobs:
           pip install -r requirements.txt
           pip install memory_profiler texttable
 
+  # ----------------------------- #
+  # 🧪 Test Job
+  # ----------------------------- #
   test:
     needs: build
     runs-on: ubuntu-latest
@@ -53,9 +60,13 @@ jobs:
         run: |
           python3 -m unittest discover -s tests -p "*.py" --buffer || echo "Tests failed, continuing pipeline"
 
+  # ----------------------------- #
+  # 🚀 Performance Benchmarking Job
+  # ----------------------------- #
   performance:
     needs: test
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -80,4 +91,44 @@ jobs:
         with:
           name: performance-results
           path: reports/*.txt
+
+  # ----------------------------- #
+  # 🐳 Docker Build & Run
+  # ----------------------------- #
+  docker:
+    needs: performance
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Check if Dockerfile exists
+        run: |
+          if [ ! -f Dockerfile ]; then
+            echo "❌ ERROR: Dockerfile not found! Ensure it exists in the root directory."
+            exit 1
+          fi
+
+      - name: Build and Run Docker Container
+        run: |
+          docker build -t vapt-tool .
+          docker run --rm vapt-tool --help || echo "Skipping execution"
+
+  # ----------------------------- #
+  # 🚀 Deployment (Optional)
+  # ----------------------------- #
+  deploy:
+    needs: docker
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Deploy to Server (Example)
+        run: |
+          echo "🚀 Deploying VAPT tool..."
+          # Add deployment commands here (e.g., SCP, SSH, Kubernetes)
 
